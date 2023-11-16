@@ -5,6 +5,8 @@ import React, { useEffect } from "react";
 import './App.css'
 import vs from './shaders/vs.glsl'
 import fs from './shaders/fs.glsl'
+import simVertex from './shaders/simVertex.glsl'
+import simFragment from './shaders/simFragment.glsl'
 //import polska from './assets/polskacrop.jpg'
 
 function App() {
@@ -13,7 +15,67 @@ function App() {
   
     // Scene
     const scene = new THREE.Scene()
-    
+
+    //Feedback Object
+    const getRenderTarget = () =>{
+      const renderTarget = new THREE.WebGLRenderTarget( this.width, this.height, {
+        minFilter: THREE.NearestFilter,
+        magFilter: THREE.NearestFilter,
+        format: THREE.RGBAFormat,
+        type: THREE.FloatType,
+      });
+      return renderTarget
+    }
+
+    const fboScene = new THREE.Scene()
+    const fboCamera = new THREE.OrthographicCamera(-1,1,1,-1,-1,1);
+
+    const setupFBO = () => {
+      const size = 128
+      let fbo = getRenderTarget()
+      let fbo1 = getRenderTarget()
+
+      fboCamera.lookat(0,0,0);
+      let fbgeometry = new THREE.PlaneGeometry(2,2);
+
+      const data = new Float32Array(this.size * this.size * 4);
+
+      for (let i = 0; i < size; i++) {
+        for (let j = 0; j < size; j++) {
+          let index = (i + j * size) * 4;
+          let theta = Math.random() * Math.PI * 2
+          let r = 0.5 + 0.5*Math.random()
+          data[index + 0] = r*Math.cos(theta);
+          data[index + 1] = r*Math.sin(theta);
+          data[index + 2] = 1.;
+          data[index + 3] = 1.;
+
+        }
+      }
+      const fboTexture = new THREE.DataTexture(data, size, size, THREE.RGBAFormat, THREE.FloatType);
+      fboTexture.magFilter = THREE.NearestFilter
+      fboTexture.minFilter = THREE.NearestFilter
+      fboTexture.needsUpdate = true;
+
+      const fboMaterial = new THREE.ShaderMaterial({
+        vertexShader: simVertex,
+        fragmentShader: simFragment,
+        uniforms: {
+          uPositions: {
+           value: null
+          },
+          uTime: {
+            value: 0
+          },
+        }
+      })
+
+      //const mesh = new THREE.Mesh(fbgeometry, fboTexture)
+      //fboScene.add(mesh)
+
+    }
+    setupFBO();
+
     /**
      * Textures
      */
@@ -44,7 +106,7 @@ function App() {
     const shaderMaterial = new THREE.RawShaderMaterial({
       vertexShader: vs,
       fragmentShader: fs,
-      //wireframe: true,
+      wireframe: true,
       side: THREE.DoubleSide,
       //tansparent: true //to use alpha
       uniforms: {
@@ -131,7 +193,9 @@ function App() {
         controls.update()
     
         // Render
-        renderer.render(scene, camera)
+        //renderer.render(scene, camera)
+        renderer.setRenderTarget(null);
+        renderer.render(fboScene, fboCamera)
     
         // Call tick again on the next frame
         window.requestAnimationFrame(tick)
