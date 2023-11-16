@@ -70,8 +70,8 @@ function App() {
         }
       })
 
-      //const mesh = new THREE.Mesh(fbgeometry, fboTexture)
-      //fboScene.add(mesh)
+      const fbmesh = new THREE.Mesh(fbgeometry, fboTexture)
+      fboScene.add(fbmesh)
 
     }
     setupFBO();
