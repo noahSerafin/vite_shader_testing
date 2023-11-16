@@ -44,7 +44,7 @@ function App() {
     const shaderMaterial = new THREE.RawShaderMaterial({
       vertexShader: vs,
       fragmentShader: fs,
-      //wireframe: true,
+      wireframe: true,
       side: THREE.DoubleSide,
       //tansparent: true //to use alpha
       uniforms: {
